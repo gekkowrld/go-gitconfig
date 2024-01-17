@@ -10,10 +10,11 @@ import (
 	"gopkg.in/ini.v1"
 )
 
+// Global Starting point location, DON'T EDIT IT
 var LookupStartLocation string
 
 // BUG(gekkowrld): Can't handle windows paths yet
-func gogitconfig(configKey string, startingPoint ...string) (string, error) {
+func GetValue(configKey string, startingPoint ...string) (string, error) {
 	// Instantiate the configLocation
 	configLocation, _ := os.Getwd()
 
