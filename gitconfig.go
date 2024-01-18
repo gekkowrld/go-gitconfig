@@ -1,3 +1,8 @@
+// A package to retrive git configuration values.
+// Doesn't use git commands, instead reads the files directly.
+// You are free to audit and use the code as you please, just follow the LICENSE agreement when doing that.
+// NOTE: Don't fully trust the results returned, do your own error checking.
+
 package gogitconfig
 
 import (
@@ -10,10 +15,17 @@ import (
 	"gopkg.in/ini.v1"
 )
 
-// Global Starting point location, DON'T EDIT IT
+// Global Starting point location, DON'T EDIT IT!
 var LookupStartLocation string
 
-// BUG(gekkowrld): Can't handle windows paths yet
+// BUG(gekkowrld): Can't handle windows paths yet.
+
+// GetValue returns the value of the git keys as specified by git config files.
+// If the key is not set, an error is returned with an empty string
+// The startingPoint is optional and should only be set if there is need for constant starting point.
+// The value is searched from the local configuration file upwards.
+// No error is returned if any of the configuration files don't exist or have an error.
+// An error is only returned when the key is not found.
 func GetValue(configKey string, startingPoint ...string) (string, error) {
 	// Instantiate the configLocation
 	configLocation, _ := os.Getwd()
