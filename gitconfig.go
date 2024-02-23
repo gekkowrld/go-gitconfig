@@ -15,8 +15,29 @@ import (
 	"gopkg.in/ini.v1"
 )
 
-// Global Starting point location, DON'T EDIT IT!
-var LookupStartLocation string
+// Options Passed
+// Set:
+//     - the startiing location
+//     - the config key e.g user.key
+//     - the config level
+// The config level is one of this values:
+//   - 1 -> "local"
+//   - 2 -> "global"
+//   - 3 -> "system"
+//   - not set -> whichever comes first
+//   - 0 and any other number -> whichever comes first
+type OptionsPassed struct {
+    LookupStartLocation string
+    ConfigLevel         int
+    ConfigKey           string
+}
+
+// The var for use as "normal"
+var optsEntered struct {
+    LookupStartLocation string
+    ConfigLevel         int
+    ConfigKey           string
+}
 
 // BUG(gekkowrld): Can't handle windows paths yet.
 
@@ -26,18 +47,55 @@ var LookupStartLocation string
 // The value is searched from the local configuration file upwards.
 // No error is returned if any of the configuration files don't exist or have an error.
 // An error is only returned when the key is not found.
-func GetValue(configKey string, startingPoint ...string) (string, error) {
-	// Instantiate the configLocation
-	configLocation, _ := os.Getwd()
+func GetValue(optsPassed OptionsPassed) (string, error) {
+    // Instantiate the configLocation
+    configLocation, _ := os.Getwd()
 
-	// Overide it if there is the startingPoint is actually set
-	if len(startingPoint) >= 1 {
-		// Take only the fist part of the input incase the user passed excess
-		configLocation = startingPoint[0]
-	}
+    // Override it if there is the startingPoint is actually set
+    if optsPassed.LookupStartLocation != ""{
+        // Take only the first part of the input in case the user passed excess
+        configLocation = optsPassed.LookupStartLocation
+    }
 
-	LookupStartLocation = configLocation
-	return callConfRecursively(configKey)
+    // Check if a user passed in a file or a directory.
+    // If not directory, return the parent directory
+    // Don't do any error checking for now.
+    isUserDir := directoryExists(configLocation)
+    if !isUserDir {
+        configLocation = filepath.Dir(configLocation)
+    }
+
+    // BUG: Not my bug but worth mentioning:
+    // The filepath.Dir() doesn't play nice with Windows.
+    // So there may be some problems with that if it happens
+    // to run on windows.
+
+    optsEntered.LookupStartLocation = configLocation
+    optsEntered.ConfigLevel = optsPassed.ConfigLevel
+    optsEntered.ConfigKey = optsPassed.ConfigKey
+    return dealWithLevels()
+}
+
+// Check the user entered number and use it to
+// call the relevant function(s)
+func dealWithLevels() (string, error){
+    var level int
+    var confKey string
+    level = optsEntered.ConfigLevel
+    confKey = optsEntered.ConfigKey
+
+    if level == 1 {
+	    local_file := configLevelFile("local")
+    	return  getConfig(confKey, local_file)
+    } else if level == 2 {
+	    global_file := configLevelFile("global")
+    	return  getConfig(confKey, global_file)
+    } else if level == 3 {
+	    system_file := configLevelFile("system")
+    	return getConfig(confKey, system_file)
+    } else {
+        return callConfRecursively(confKey)
+    }
 }
 
 /* The following methods are not exported, for internal usage */
@@ -47,7 +105,7 @@ func GetValue(configKey string, startingPoint ...string) (string, error) {
 // No error is returned, consider an empty sting an error.
 // BUG(gekkowrld): Can't get system configuration, I have to figure out how to get $(prefix)
 func configLevelFile(level string) string {
-	configStartingLocation := LookupStartLocation
+	configStartingLocation := optsEntered.LookupStartLocation
 
 	// For files to be used/returned
 	var localLocation string
@@ -104,6 +162,7 @@ func fileExists(fileName string) bool {
 	}
 	return !info.IsDir()
 }
+
 
 // findGitRoot recursively works its way up from the location specified.
 // If it reaches the root directory before it gets a hit, it returns an error.
