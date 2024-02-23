@@ -37,7 +37,7 @@ import "github.com/gekkowrld/go-gitconfig"
 // all the others (well 2) are optional
 myConfig := OptionsPassed{
     LookupStartLocation: "/path/to/repo", // Adjust this path as needed
-    ConfigLevel:         0, 
+    ConfigLevel:         0,
     ConfigKey:           "user.name",
 }
 
