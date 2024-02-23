@@ -32,15 +32,17 @@ Example:
 ```go
 import "github.com/gekkowrld/go-gitconfig"
 
-username, err := gogitconfig.GetValue("user.name", "/path/to/repo") // For a specific starting point
-if err != nil {
-    fmt.Print(err)
+// The struct to be passed.
+// The required field is ConfigKey
+// all the others (well 2) are optional
+myConfig := OptionsPassed{
+    LookupStartLocation: "/path/to/repo", // Adjust this path as needed
+    ConfigLevel:         0, 
+    ConfigKey:           "user.name",
 }
 
-email, err := gogitconfig.GetValue("user.email") // For when no specific location is required
-if err != nil {
-    fmt.Print(err)
-}
+// Call the function with the test case
+username, err := gogitconfig.GetValue(myConfig)
 
-fmt.Printf("Your git username is %s\nYour git Email is %s", username, email)
+fmt.Printf("Your git username is %s\n", username)
 ```
